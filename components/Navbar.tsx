@@ -30,6 +30,7 @@ const Navbar = (props: Props) => {
                 <Link className='font-bold text-3xl p-8' href="/" onClick={handleNav}>Castell</Link>
                 <Link className='font-bold text-3xl p-8' href="/contacto" onClick={handleNav}>Contacto</Link>
                 <Link className='font-bold text-3xl p-8' href="/fiestas" onClick={handleNav}>Fiestas</Link>
+                <Link className='font-bold text-3xl p-8' href="/socios" onClick={handleNav}>Socios</Link>
                 <Link className='font-bold text-3xl p-8' href="/registro" onClick={handleNav}>Registro</Link>
             </ul>
         </div>
