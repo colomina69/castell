@@ -1,12 +1,10 @@
-import { useRouter } from "next/router"
+import { useRouter } from "next/navigation"
 
 
 
 
 const page = () => {
    const router=useRouter()
-   const path=router.query.path
-   console.log(path)
   return (
     <div>page</div>
   )
