@@ -1,21 +1,38 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X } from 'lucide-react'
+import { Menu, X, User } from 'lucide-react'
 import { cn } from '@/utils/cn'
+import { createClient } from '@/utils/supabase/client'
 
 const navLinks = [
     { name: 'Inicio', href: '/' },
     { name: 'Historia', href: '/#historia' },
     { name: 'Galería', href: '/galeria' },
-    { name: 'Actos', href: '/#actos' },
+    { name: 'Actos', href: '/actos' },
     { name: 'Contacto', href: '/#contacto' },
 ]
 
 export function Header() {
     const [isOpen, setIsOpen] = useState(false)
+    const [user, setUser] = useState<any>(null)
+    const supabase = createClient()
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser()
+            setUser(user)
+        }
+        checkUser()
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user ?? null)
+        })
+
+        return () => subscription.unsubscribe()
+    }, [supabase.auth])
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -45,12 +62,22 @@ export function Header() {
                             {link.name}
                         </Link>
                     ))}
-                    <Link
-                        href="/login"
-                        className="px-6 py-2 bg-primary text-white rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
-                    >
-                        Acceso Socios
-                    </Link>
+                    {user ? (
+                        <Link
+                            href="/perfil"
+                            className="flex items-center gap-2 px-6 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-bold hover:bg-primary/20 transition-all"
+                        >
+                            <User className="w-4 h-4" />
+                            Mi Perfil
+                        </Link>
+                    ) : (
+                        <Link
+                            href="/login"
+                            className="px-6 py-2 bg-primary text-white rounded-full text-sm font-bold hover:bg-primary/90 transition-colors shadow-sm"
+                        >
+                            Acceso Socios
+                        </Link>
+                    )}
                 </div>
 
                 {/* Mobile menu button */}
@@ -78,13 +105,23 @@ export function Header() {
                             {link.name}
                         </Link>
                     ))}
-                    <Link
-                        href="/login"
-                        onClick={() => setIsOpen(false)}
-                        className="mt-2 w-full text-center py-3 bg-primary text-white rounded-xl font-semibold"
-                    >
-                        Acceso Socios
-                    </Link>
+                    {user ? (
+                        <Link
+                            href="/perfil"
+                            onClick={() => setIsOpen(false)}
+                            className="mt-2 w-full text-center py-3 bg-primary/10 text-primary rounded-xl font-bold border border-primary/20"
+                        >
+                            Mi Perfil
+                        </Link>
+                    ) : (
+                        <Link
+                            href="/login"
+                            onClick={() => setIsOpen(false)}
+                            className="mt-2 w-full text-center py-3 bg-primary text-white rounded-xl font-bold shadow-sm"
+                        >
+                            Acceso Socios
+                        </Link>
+                    )}
                 </div>
             </div>
         </header>
