@@ -21,6 +21,10 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "Filà Moros del Castell - Benilloba",
   description: "Web oficial de la Filà Moros del Castell de Benilloba. Tradición, historia y germanor.",
+  icons: {
+    icon: "/escudo.png",
+    apple: "/escudo.png",
+  }
 };
 
 export default function RootLayout({
