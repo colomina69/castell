@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import Image from 'next/image'
 import { motion, AnimatePresence } from 'framer-motion'
-import { X, ChevronLeft, ChevronRight, Folder } from 'lucide-react'
 import { createClient } from '@/utils/supabase/client'
-import { cn } from '@/utils/cn'
+import { Folder, X, ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface GalleryItem {
     name: string
@@ -23,13 +22,10 @@ export function Gallery() {
     const [images, setImages] = useState<GalleryItem[]>([])
     const [loading, setLoading] = useState(true)
     const [lightboxImage, setLightboxImage] = useState<number | null>(null)
-    const supabase = createClient()
 
-    useEffect(() => {
-        fetchYears()
-    }, [])
+    const supabase = useMemo(() => createClient(), [])
 
-    async function fetchYears() {
+    const fetchYears = useCallback(async () => {
         setLoading(true)
         console.log('Fetching years from Supabase Storage...')
         try {
@@ -78,9 +74,9 @@ export function Gallery() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [supabase.storage])
 
-    async function fetchImages(year: string) {
+    const fetchImages = useCallback(async (year: string) => {
         setLoading(true)
         console.log(`Fetching images for year: ${year}`)
         try {
@@ -102,7 +98,11 @@ export function Gallery() {
         } finally {
             setLoading(false)
         }
-    }
+    }, [supabase.storage])
+
+    useEffect(() => {
+        fetchYears()
+    }, [fetchYears])
 
     const closeLightbox = () => setLightboxImage(null)
     const nextImage = () => setLightboxImage(prev => (prev !== null && prev < images.length - 1 ? prev + 1 : prev))
@@ -146,7 +146,7 @@ export function Gallery() {
                                 <Folder className="w-16 h-16 text-border mx-auto mb-4" />
                                 <h3 className="text-xl font-semibold mb-2">No hay álbumes todavía</h3>
                                 <p className="text-muted-foreground mb-6">
-                                    Para comenzar, crea carpetas por años (ej: 2024) en el bucket "fila" de Supabase y sube algunas fotos.
+                                    Para comenzar, crea carpetas por años (ej: 2024) en el bucket &quot;fila&quot; de Supabase y sube algunas fotos.
                                 </p>
                                 <div className="inline-flex items-center gap-2 text-primary font-medium text-sm">
                                     Esperando contenido...
