@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, User } from 'lucide-react'
+import { Menu, X, User, Settings } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { createClient } from '@/utils/supabase/client'
 
@@ -18,21 +18,45 @@ const navLinks = [
 export function Header() {
     const [isOpen, setIsOpen] = useState(false)
     const [user, setUser] = useState<any>(null)
+    const [isAdmin, setIsAdmin] = useState(false)
     const supabase = createClient()
 
     useEffect(() => {
         const checkUser = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             setUser(user)
+
+            if (user) {
+                // Obtener el perfil para verificar si es admin
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', user.id)
+                    .single()
+
+                setIsAdmin(profile?.role === 'admin')
+            }
         }
         checkUser()
 
-        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
             setUser(session?.user ?? null)
+
+            if (session?.user) {
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('role')
+                    .eq('id', session.user.id)
+                    .single()
+
+                setIsAdmin(profile?.role === 'admin')
+            } else {
+                setIsAdmin(false)
+            }
         })
 
         return () => subscription.unsubscribe()
-    }, [supabase.auth])
+    }, [supabase.auth, supabase])
 
     return (
         <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
@@ -70,13 +94,24 @@ export function Header() {
                         </Link>
                     ))}
                     {user ? (
-                        <Link
-                            href="/perfil"
-                            className="flex items-center gap-2 px-6 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-bold hover:bg-primary/20 transition-all"
-                        >
-                            <User className="w-4 h-4" />
-                            Mi Perfil
-                        </Link>
+                        <>
+                            {isAdmin && (
+                                <Link
+                                    href="/admin/festeros"
+                                    className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full text-sm font-bold hover:bg-amber-500/20 transition-all"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    Gestión
+                                </Link>
+                            )}
+                            <Link
+                                href="/perfil"
+                                className="flex items-center gap-2 px-6 py-2 bg-primary/10 text-primary border border-primary/20 rounded-full text-sm font-bold hover:bg-primary/20 transition-all"
+                            >
+                                <User className="w-4 h-4" />
+                                Mi Perfil
+                            </Link>
+                        </>
                     ) : (
                         <Link
                             href="/login"
@@ -113,13 +148,25 @@ export function Header() {
                         </Link>
                     ))}
                     {user ? (
-                        <Link
-                            href="/perfil"
-                            onClick={() => setIsOpen(false)}
-                            className="mt-2 w-full text-center py-3 bg-primary/10 text-primary rounded-xl font-bold border border-primary/20"
-                        >
-                            Mi Perfil
-                        </Link>
+                        <>
+                            {isAdmin && (
+                                <Link
+                                    href="/admin/festeros"
+                                    onClick={() => setIsOpen(false)}
+                                    className="mt-2 w-full text-center py-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl font-bold border border-amber-500/20 flex items-center justify-center gap-2"
+                                >
+                                    <Settings className="w-4 h-4" />
+                                    Gestión de Festeros
+                                </Link>
+                            )}
+                            <Link
+                                href="/perfil"
+                                onClick={() => setIsOpen(false)}
+                                className="mt-2 w-full text-center py-3 bg-primary/10 text-primary rounded-xl font-bold border border-primary/20"
+                            >
+                                Mi Perfil
+                            </Link>
+                        </>
                     ) : (
                         <Link
                             href="/login"

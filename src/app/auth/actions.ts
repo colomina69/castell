@@ -46,7 +46,7 @@ export async function signup(formData: FormData) {
         .ilike('email', email)
 
     if (count === 0) {
-        return redirect('/signup?error=' + encodeURIComponent('El correo no pertenece a ningún socio de la Filà.'))
+        return redirect('/?error=' + encodeURIComponent('No es socio. Contacta con la directiva si crees que es un error.'))
     }
 
     const data = {
