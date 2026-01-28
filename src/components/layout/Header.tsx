@@ -9,10 +9,10 @@ import { createClient } from '@/utils/supabase/client'
 
 const navLinks = [
     { name: 'Inicio', href: '/' },
-    { name: 'Historia', href: '/#historia' },
+    { name: 'Historia', href: '/historia' },
     { name: 'Galería', href: '/galeria' },
     { name: 'Actos', href: '/actos' },
-    { name: 'Contacto', href: '/#contacto' },
+    { name: 'Contacto', href: '/contacto' },
 ]
 
 export function Header() {
@@ -38,12 +38,19 @@ export function Header() {
         <header className="fixed top-0 left-0 right-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
             <nav className="container mx-auto px-4 h-20 flex items-center justify-between">
                 <Link href="/" className="flex items-center gap-2">
-                    <div className="relative w-12 h-12">
+                    <div className="relative">
                         <Image
                             src="/escudo.png"
                             alt="Escudo Fila Moros del Castell"
-                            fill
-                            className="object-contain"
+                            width={48}
+                            height={48}
+                            priority
+                            unoptimized={true}
+                            className="object-contain drop-shadow-md"
+                            style={{
+                                imageRendering: '-webkit-optimize-contrast',
+                                transform: 'translateZ(0)' // Force GPU acceleration
+                            }}
                         />
                     </div>
                     <span className="hidden sm:block font-display text-xl font-bold text-primary">

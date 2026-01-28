@@ -25,7 +25,12 @@ export function Hero() {
                         alt="Escudo Fila Moros del Castell"
                         fill
                         priority
+                        unoptimized={true}
                         className="object-contain drop-shadow-2xl"
+                        style={{
+                            imageRendering: '-webkit-optimize-contrast',
+                            transform: 'translateZ(0)'
+                        }}
                     />
                 </motion.div>
 
