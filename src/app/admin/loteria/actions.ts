@@ -152,38 +152,14 @@ export async function getDrawAssignments(drawId: string) {
 export async function updateAssignment(drawId: string, festeroId: string, quantity: number) {
     const supabase = await createClient()
 
-    // Check if assignment exists using unique key logic (draw_id + festero_id)
-    // First try to find existing assignment to get ID, or upsert.
-    // Upsert needs a unique constraint on (draw_id, festero_id). I didn't create that index explicitly as unique but it logic allows it.
-    // I'll assume standard upsert if I had a constraint, but without it I should check first.
-    // Actually, I can use select.
-
-    const { data: existing } = await supabase
+    const { error } = await supabase
         .from('lottery_assignments')
-        .select('id')
-        .eq('draw_id', drawId)
-        .eq('festero_id', festeroId)
-        .single()
-
-    let error;
-
-    if (existing) {
-        const { error: updError } = await supabase
-            .from('lottery_assignments')
-            .update({ quantity })
-            .eq('id', existing.id)
-        error = updError;
-    } else {
-        const { error: insError } = await supabase
-            .from('lottery_assignments')
-            .insert({
-                draw_id: drawId,
-                festero_id: festeroId,
-                quantity,
-                status: 'pending'
-            })
-        error = insError;
-    }
+        .upsert({
+            draw_id: drawId,
+            festero_id: festeroId,
+            quantity,
+            status: 'pending'
+        }, { onConflict: 'draw_id,festero_id' })
 
     if (error) {
         console.error('Error updating assignment:', error)
@@ -196,55 +172,26 @@ export async function updateAssignment(drawId: string, festeroId: string, quanti
 export async function bulkAssign(drawId: string, quantity: number) {
     const supabase = await createClient()
 
-    // Obtener todos los festeros ids
+    // 1. Obtener todos los festeros ids
     const { data: festeros } = await supabase.from('festeros').select('id')
     if (!festeros) throw new Error('No se encontraron festeros')
 
-    // Prepare upserts. Need to identify existing ones to update or insert new ones.
-    // A loop is easier for logic if quantity is handled individually, but for bulk 'set to X' we want to override or set if zero?
-    // User probably wants "Set everyone to X tickets".
+    // 2. Preparar datos para upsert masivo
+    const upserts = festeros.map(f => ({
+        draw_id: drawId,
+        festero_id: f.id,
+        quantity: quantity,
+        status: 'pending'
+    }))
 
-    // For efficiency, I might delete all and recreate? No, that loses payment data created_at etc.
-    // I will iterate and update/insert. (For 100-200 members it's fine).
-
-    // Optimization: Get all assignments first.
-    const { data: existingAssignments } = await supabase
+    // 3. Ejecutar upsert (Supabase maneja el conflicto con draw_id,festero_id)
+    const { error } = await supabase
         .from('lottery_assignments')
-        .select('id, festero_id')
-        .eq('draw_id', drawId)
+        .upsert(upserts, { onConflict: 'draw_id,festero_id' })
 
-    const existingMap = new Map(existingAssignments?.map(a => [a.festero_id, a.id]))
-
-    const updates = []
-    const inserts = []
-
-    for (const f of festeros) {
-        if (existingMap.has(f.id)) {
-            updates.push(f.id) // We'll update these
-        } else {
-            inserts.push({
-                draw_id: drawId,
-                festero_id: f.id,
-                quantity: quantity
-            })
-        }
-    }
-
-    // Execute inserts
-    if (inserts.length > 0) {
-        const { error } = await supabase.from('lottery_assignments').insert(inserts)
-        if (error) throw error
-    }
-
-    // Execute updates (can't do bulk update with different WHERE clauses easily without complex query, but here we update ALL to same quantity)
-    // So we can update where draw_id = X AND festero_id IN list
-    if (updates.length > 0) {
-        const { error } = await supabase
-            .from('lottery_assignments')
-            .update({ quantity: quantity })
-            .eq('draw_id', drawId)
-            .in('festero_id', updates)
-        if (error) throw error
+    if (error) {
+        console.error('Error in bulk assignment:', error)
+        throw new Error('Error en la asignación masiva')
     }
 
     revalidatePath(`/admin/loteria/${drawId}`)

@@ -6,24 +6,34 @@ import { redirect } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { motion } from 'framer-motion'
-import { User, Mail, Shield, LogOut, Settings, Bell, CreditCard } from 'lucide-react'
+import { User, Mail, Shield, LogOut, Settings, Bell, CreditCard, Ticket } from 'lucide-react'
 import { logout } from '../auth/actions'
+import { getMyLotteryAssignments } from './actions'
 
 export default function ProfilePage() {
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
+    const [assignments, setAssignments] = useState<any[]>([])
     const supabase = createClient()
 
     useEffect(() => {
-        const getUser = async () => {
+        const loadData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) {
                 redirect('/login')
             }
             setUser(user)
+
+            try {
+                const lotteryData = await getMyLotteryAssignments()
+                setAssignments(lotteryData)
+            } catch (err) {
+                console.error('Error loading lottery data:', err)
+            }
+
             setLoading(false)
         }
-        getUser()
+        loadData()
     }, [supabase.auth])
 
     if (loading) {
@@ -74,11 +84,16 @@ export default function ProfilePage() {
                         </div>
 
                         {/* Grid Stats/Info */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                             {[
-                                { label: 'Antigüedad', value: '5 años', icon: Bell, color: 'text-blue-500' },
-                                { label: 'Estado Cuota', value: 'Al día', icon: CreditCard, color: 'text-green-500' },
-                                { label: 'Próximo Evento', value: 'Mig Any', icon: Shield, color: 'text-primary' },
+                                { label: 'Décimos Asignados', value: assignments.reduce((acc, curr) => acc + (curr.quantity || 0), 0), icon: Bell, color: 'text-blue-500' },
+                                {
+                                    label: 'Pendiente Lotería', value: `${assignments.reduce((acc, curr) => {
+                                        const total = (curr.quantity || 0) * (Number(curr.lottery_draws?.ticket_price || 0) + Number(curr.lottery_draws?.surcharge || 0));
+                                        return acc + (total - Number(curr.amount_paid || 0));
+                                    }, 0).toFixed(2)}€`, icon: CreditCard, color: 'text-amber-500'
+                                },
+                                { label: 'Estado General', value: 'Al día', icon: Shield, color: 'text-primary' },
                             ].map((stat, i) => (
                                 <motion.div
                                     key={i}
@@ -96,45 +111,105 @@ export default function ProfilePage() {
                             ))}
                         </div>
 
+                        {/* Lotería Asignada */}
+                        <div className="mb-12">
+                            <div className="flex items-center justify-between mb-6">
+                                <h2 className="text-2xl font-bold flex items-center gap-2">
+                                    <Ticket className="w-6 h-6 text-amber-600" /> Mi Lotería Asignada
+                                </h2>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {assignments.length > 0 ? (
+                                    assignments.map((assignment, i) => {
+                                        const draw = assignment.lottery_draws;
+                                        const pricePerTicket = Number(draw.ticket_price) + Number(draw.surcharge);
+                                        const totalPrice = assignment.quantity * pricePerTicket;
+                                        const pending = totalPrice - Number(assignment.amount_paid);
+
+                                        return (
+                                            <motion.div
+                                                key={assignment.id}
+                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ delay: i * 0.1 }}
+                                                className="bg-card border border-border/50 rounded-2xl overflow-hidden shadow-sm hover:border-amber-500/30 transition-all group"
+                                            >
+                                                <div className="p-6">
+                                                    <div className="flex justify-between items-start mb-4">
+                                                        <div>
+                                                            <h3 className="font-bold text-lg group-hover:text-amber-700 transition-colors">{draw.name}</h3>
+                                                            <p className="text-sm text-muted-foreground">Sorteo: {new Date(draw.draw_date).toLocaleDateString()}</p>
+                                                        </div>
+                                                        <div className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${pending === 0 ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                                            }`}>
+                                                            {pending === 0 ? 'Liquidado' : 'Pendiente'}
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-end justify-between gap-4">
+                                                        <div className="space-y-1">
+                                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Asignación</p>
+                                                            <p className="text-2xl font-black text-foreground">{assignment.quantity} <span className="text-sm font-normal text-muted-foreground">décimos</span></p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Total a pagar</p>
+                                                            <p className="text-xl font-bold text-amber-700">{totalPrice.toFixed(2)}€</p>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="bg-muted/30 px-6 py-3 border-t border-border/50 flex justify-between items-center text-sm">
+                                                    <span className="text-muted-foreground">Pagado: {Number(assignment.amount_paid).toFixed(2)}€</span>
+                                                    {pending > 0 && (
+                                                        <span className="font-bold text-destructive">Debe: {pending.toFixed(2)}€</span>
+                                                    )}
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="md:col-span-2 p-12 text-center bg-muted/20 border-2 border-dashed border-muted-foreground/20 rounded-2xl">
+                                        <Ticket className="w-12 h-12 mx-auto mb-4 text-muted-foreground/30" />
+                                        <p className="text-muted-foreground">No tienes lotería asignada en este momento.</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
                         {/* Content Sections */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-8">
-                                <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm">
+                            <div className="lg:col-span-2">
+                                <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm h-full">
                                     <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                                        <Settings className="w-6 h-6 text-primary" /> Información de Contacto
+                                        <Settings className="w-6 h-6 text-primary" /> Información de Miembro
                                     </h3>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Nombre Completo</p>
-                                            <p className="font-medium text-foreground">Juan Pérez García</p>
+                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Email de Cuenta</p>
+                                            <p className="font-medium text-foreground">{user?.email}</p>
                                         </div>
                                         <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">DNI</p>
-                                            <p className="font-medium text-foreground">12345678X</p>
+                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">ID de Socio</p>
+                                            <p className="font-mono text-xs text-muted-foreground">{user?.id}</p>
                                         </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Teléfono</p>
-                                            <p className="font-medium text-foreground">+34 600 000 000</p>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <p className="text-xs text-muted-foreground uppercase font-bold tracking-wider">Escuadra</p>
-                                            <p className="font-medium text-foreground">Escuadra de Honor</p>
+                                        <div className="p-4 bg-muted/30 rounded-xl sm:col-span-2">
+                                            <p className="text-xs text-muted-foreground mb-2">Para modificar tus datos personales o de contacto, por favor contacta con el secretario de la Filà.</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="space-y-8">
+                            <div>
                                 <div className="bg-primary/5 border border-primary/20 rounded-2xl p-8 shadow-sm">
-                                    <h3 className="text-xl font-bold mb-4 text-primary">Avisos de la Filà</h3>
+                                    <h3 className="text-xl font-bold mb-4 text-primary">Próximos Actos</h3>
                                     <div className="space-y-4">
                                         <div className="p-3 bg-white/50 dark:bg-black/20 rounded-lg text-sm border border-black/5">
-                                            <p className="font-bold mb-1">Lotería de Navidad</p>
-                                            <p className="text-muted-foreground">Ya puedes pasar a recoger tus papeletas de lotería en la sede.</p>
+                                            <p className="font-bold mb-1">Mig Any 2026</p>
+                                            <p className="text-muted-foreground">Próximo sábado 15 de febrero.</p>
                                         </div>
                                         <div className="p-3 bg-white/50 dark:bg-black/20 rounded-lg text-sm border border-black/5">
-                                            <p className="font-bold mb-1">Cena de Hermandad</p>
-                                            <p className="text-muted-foreground">Confirmar asistencia antes del viernes 4.</p>
+                                            <p className="font-bold mb-1">Asamblea General</p>
+                                            <p className="text-muted-foreground">Viernes 21 de marzo a las 20:00h.</p>
                                         </div>
                                     </div>
                                 </div>

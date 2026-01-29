@@ -84,7 +84,7 @@ export function Header() {
 
                 {/* Desktop Nav */}
                 <div className="hidden md:flex items-center gap-8">
-                    {navLinks.map((link) => (
+                    {!user && navLinks.map((link) => (
                         <Link
                             key={link.name}
                             href={link.href}
@@ -93,6 +93,14 @@ export function Header() {
                             {link.name}
                         </Link>
                     ))}
+                    {user && (
+                        <Link
+                            href="/perfil"
+                            className="text-sm font-medium hover:text-primary transition-colors"
+                        >
+                            Dashboard
+                        </Link>
+                    )}
                     {user ? (
                         <>
                             {isAdmin && (
@@ -146,7 +154,7 @@ export function Header() {
                 isOpen ? "max-h-96" : "max-h-0"
             )}>
                 <div className="flex flex-col p-4 gap-4">
-                    {navLinks.map((link) => (
+                    {!user && navLinks.map((link) => (
                         <Link
                             key={link.name}
                             href={link.href}
@@ -156,6 +164,15 @@ export function Header() {
                             {link.name}
                         </Link>
                     ))}
+                    {user && (
+                        <Link
+                            href="/perfil"
+                            onClick={() => setIsOpen(false)}
+                            className="text-lg font-medium hover:text-primary py-2 transition-colors border-b border-border/50"
+                        >
+                            Dashboard
+                        </Link>
+                    )}
                     {user ? (
                         <>
                             {isAdmin && (

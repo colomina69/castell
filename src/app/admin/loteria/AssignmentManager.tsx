@@ -43,6 +43,7 @@ export default function AssignmentManager({
         try {
             await updateAssignment(drawId, festeroId, quantity)
             router.push(`?success=Asignación guardada correctamente`)
+            router.refresh()
         } catch (error) {
             console.error(error)
             router.push(`?error=Error al guardar la asignación`)

@@ -1,6 +1,6 @@
 import { getLotteryDraws } from './actions'
 import Link from 'next/link'
-import { Plus, ChevronRight, Calendar, Ticket, AlertCircle } from 'lucide-react'
+import { Plus, ChevronRight, Calendar, Ticket, AlertCircle, ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
@@ -9,6 +9,9 @@ export default async function LotteryPage() {
 
     return (
         <div className="container mx-auto py-10 px-4 max-w-7xl">
+            <Link href="/admin/festeros" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Volver a Gestión
+            </Link>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight text-amber-900">Gestión de Lotería</h1>

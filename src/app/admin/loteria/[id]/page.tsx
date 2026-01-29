@@ -6,17 +6,8 @@ import Link from 'next/link'
 import { ArrowLeft, Calendar, Euro, FileText } from 'lucide-react'
 import { notFound } from 'next/navigation'
 
-export default async function DrawDetailsPage({ params }: { params: { id: string } }) {
-    // Next.js 15+ params are async, but checking context. Next.js 14 params are sync objects usually but updated in types recently?
-    // Depending on Next version `params` might be a promise. Assuming sync for now as per typical PageProps unless strict mode.
-    // If error, will fix.
-
-    // Update: In recent Next.js versions params is a Promise in layout/page.
-    // However, if the user's project is older it might be sync. 
-    // To be safe I will await it if it's a promise, but TS might complain if I treat it as such without knowing.
-    // Looking at other files might help but I'll assume standard usage.
-
-    const { id } = params
+export default async function DrawDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params
 
     const draw = await getLotteryDraw(id)
     if (!draw) notFound()
@@ -30,9 +21,15 @@ export default async function DrawDetailsPage({ params }: { params: { id: string
 
     return (
         <div className="container mx-auto py-10 px-4 max-w-7xl">
-            <Link href="/admin/loteria" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6 transition-colors">
-                <ArrowLeft className="mr-2 h-4 w-4" /> Volver al listado
-            </Link>
+            <div className="flex gap-4 items-center mb-6">
+                <Link href="/admin/festeros" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <ArrowLeft className="mr-2 h-4 w-4" /> Dashboard
+                </Link>
+                <span className="text-muted-foreground/30">|</span>
+                <Link href="/admin/loteria" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    Volver al listado
+                </Link>
+            </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 {/* Sidebar / Info Panel */}
