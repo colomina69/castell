@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { Menu, X, User, Settings } from 'lucide-react'
+import { Menu, X, User, Settings, Ticket } from 'lucide-react'
 import { cn } from '@/utils/cn'
 import { createClient } from '@/utils/supabase/client'
 
@@ -96,13 +96,22 @@ export function Header() {
                     {user ? (
                         <>
                             {isAdmin && (
-                                <Link
-                                    href="/admin/festeros"
-                                    className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full text-sm font-bold hover:bg-amber-500/20 transition-all"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                    Gestión
-                                </Link>
+                                <>
+                                    <Link
+                                        href="/admin/loteria"
+                                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full text-sm font-bold hover:bg-amber-500/20 transition-all"
+                                    >
+                                        <Ticket className="w-4 h-4" />
+                                        Lotería
+                                    </Link>
+                                    <Link
+                                        href="/admin/festeros"
+                                        className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 rounded-full text-sm font-bold hover:bg-amber-500/20 transition-all"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                        Gestión
+                                    </Link>
+                                </>
                             )}
                             <Link
                                 href="/perfil"
@@ -150,14 +159,24 @@ export function Header() {
                     {user ? (
                         <>
                             {isAdmin && (
-                                <Link
-                                    href="/admin/festeros"
-                                    onClick={() => setIsOpen(false)}
-                                    className="mt-2 w-full text-center py-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl font-bold border border-amber-500/20 flex items-center justify-center gap-2"
-                                >
-                                    <Settings className="w-4 h-4" />
-                                    Gestión de Festeros
-                                </Link>
+                                <>
+                                    <Link
+                                        href="/admin/loteria"
+                                        onClick={() => setIsOpen(false)}
+                                        className="mt-2 w-full text-center py-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl font-bold border border-amber-500/20 flex items-center justify-center gap-2"
+                                    >
+                                        <Ticket className="w-4 h-4" />
+                                        Gestión de Lotería
+                                    </Link>
+                                    <Link
+                                        href="/admin/festeros"
+                                        onClick={() => setIsOpen(false)}
+                                        className="mt-2 w-full text-center py-3 bg-amber-500/10 text-amber-600 dark:text-amber-400 rounded-xl font-bold border border-amber-500/20 flex items-center justify-center gap-2"
+                                    >
+                                        <Settings className="w-4 h-4" />
+                                        Gestión de Festeros
+                                    </Link>
+                                </>
                             )}
                             <Link
                                 href="/perfil"
