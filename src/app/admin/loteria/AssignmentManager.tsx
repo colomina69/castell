@@ -1,11 +1,11 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { updateAssignment, bulkAssign } from './actions'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search, Save, Users } from 'lucide-react'
-import { useToast } from '@/components/ui/use-toast' // Asumiendo que existe o usar window.alert
 
 type Assignment = {
     festero_id: string
@@ -27,7 +27,7 @@ export default function AssignmentManager({
     const [searchTerm, setSearchTerm] = useState('')
     const [bulkQuantity, setBulkQuantity] = useState(0)
     const [loading, setLoading] = useState(false)
-    // const { toast } = useToast() // Uncomment if available
+    const router = useRouter()
 
     const filteredAssignments = assignments.filter(a =>
         a.festero_name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -42,10 +42,10 @@ export default function AssignmentManager({
     const handleSaveRow = async (festeroId: string, quantity: number) => {
         try {
             await updateAssignment(drawId, festeroId, quantity)
-            // Toast success
+            router.push(`?success=Asignación guardada correctamente`)
         } catch (error) {
             console.error(error)
-            alert('Error al guardar')
+            router.push(`?error=Error al guardar la asignación`)
         }
     }
 
@@ -55,12 +55,12 @@ export default function AssignmentManager({
         setLoading(true)
         try {
             await bulkAssign(drawId, bulkQuantity)
-            // Reload page or update state logic is handled by revalidatePath usually, but client state might need refresh.
-            // For simplicity, we can reload window or rely on props update if parent re-renders (server component parent).
-            window.location.reload()
+            router.push(`?success=Asignación masiva completada`)
+            // router.refresh() handles the server state update, and ToastListener will show the message
+            setTimeout(() => router.refresh(), 100)
         } catch (error) {
             console.error(error)
-            alert('Error en asignación masiva')
+            router.push(`?error=Error en la asignación masiva`)
         } finally {
             setLoading(false)
         }
@@ -142,8 +142,8 @@ export default function AssignmentManager({
                                     </td>
                                     <td className="p-4 text-center">
                                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${assignment.quantity > 0
-                                                ? 'bg-blue-100 text-blue-700'
-                                                : 'bg-gray-100 text-gray-500'
+                                            ? 'bg-blue-100 text-blue-700'
+                                            : 'bg-gray-100 text-gray-500'
                                             }`}>
                                             {assignment.quantity > 0 ? 'Asignado' : 'Sin asignar'}
                                         </span>
