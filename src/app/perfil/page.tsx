@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { createClient } from '@/utils/supabase/client'
-import { redirect } from 'next/navigation'
+import { useRouter } from 'next/navigation'
 import { Header } from '@/components/layout/Header'
 import { Footer } from '@/components/layout/Footer'
 import { motion } from 'framer-motion'
@@ -14,19 +14,21 @@ export default function ProfilePage() {
     const [user, setUser] = useState<any>(null)
     const [loading, setLoading] = useState(true)
     const [assignments, setAssignments] = useState<any[]>([])
+    const router = useRouter()
     const supabase = createClient()
 
     useEffect(() => {
         const loadData = async () => {
             const { data: { user } } = await supabase.auth.getUser()
             if (!user) {
-                redirect('/login')
+                router.push('/login')
+                return
             }
             setUser(user)
 
             try {
                 const lotteryData = await getMyLotteryAssignments()
-                setAssignments(lotteryData)
+                setAssignments(Array.isArray(lotteryData) ? lotteryData : [])
             } catch (err) {
                 console.error('Error loading lottery data:', err)
             }
@@ -123,9 +125,11 @@ export default function ProfilePage() {
                                 {assignments.length > 0 ? (
                                     assignments.map((assignment, i) => {
                                         const draw = assignment.lottery_draws;
-                                        const pricePerTicket = Number(draw.ticket_price) + Number(draw.surcharge);
-                                        const totalPrice = assignment.quantity * pricePerTicket;
-                                        const pending = totalPrice - Number(assignment.amount_paid);
+                                        if (!draw) return null;
+
+                                        const pricePerTicket = Number(draw.ticket_price || 0) + Number(draw.surcharge || 0);
+                                        const totalPrice = (assignment.quantity || 0) * pricePerTicket;
+                                        const pending = totalPrice - Number(assignment.amount_paid || 0);
 
                                         return (
                                             <motion.div
