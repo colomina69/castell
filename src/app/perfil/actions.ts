@@ -43,8 +43,24 @@ export async function getMyLotteryAssignments() {
 
     if (assignmentsError) {
         console.error('Error fetching assignments:', assignmentsError)
-        throw new Error('Error al obtener asignaciones')
+        return []
     }
 
-    return assignments as any[]
+    if (!assignments) return []
+
+    // Asegurar que los datos sean planos y serializables
+    return assignments.map(a => ({
+        id: a.id,
+        quantity: a.quantity || 0,
+        amount_paid: a.amount_paid || 0,
+        status: a.status,
+        draw_id: a.draw_id,
+        lottery_draws: a.lottery_draws ? {
+            id: (a.lottery_draws as any).id,
+            name: (a.lottery_draws as any).name,
+            draw_date: (a.lottery_draws as any).draw_date,
+            ticket_price: (a.lottery_draws as any).ticket_price,
+            surcharge: (a.lottery_draws as any).surcharge
+        } : null
+    }))
 }

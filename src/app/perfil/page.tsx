@@ -15,7 +15,7 @@ export default function ProfilePage() {
     const [loading, setLoading] = useState(true)
     const [assignments, setAssignments] = useState<any[]>([])
     const router = useRouter()
-    const supabase = createClient()
+    const [supabase] = useState(() => createClient())
 
     useEffect(() => {
         const loadData = async () => {
@@ -36,7 +36,7 @@ export default function ProfilePage() {
             setLoading(false)
         }
         loadData()
-    }, [supabase.auth])
+    }, [router, supabase])
 
     if (loading) {
         return (
